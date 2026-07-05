@@ -58,6 +58,15 @@ Each push produces three tags: `:latest`, `:<commit-sha>`, and `:v<run-number>` 
 GitHub Actions' own auto-incrementing build counter (1, 2, 3, ...), a human-friendly alternative to
 remembering a commit SHA. See "Rolling back a deploy" below.
 
+**Images are multi-arch (`linux/amd64` + `linux/arm64`)**, built via `docker/setup-qemu-action` +
+`docker/setup-buildx-action` with `platforms: linux/amd64,linux/arm64`. This matters because Oracle
+Cloud's free-tier VMs are commonly **Ampere (ARM64)** shapes — without this, `docker pull` on such a
+VM would fetch an amd64-only image, print a `platform does not match` warning, and either run under
+slow/flaky QEMU emulation or fail outright, depending on what's installed on the host. The tradeoff:
+CI build time goes up noticeably, since the `arm64` leg of the backend build (a full Gradle/JVM
+build) runs under QEMU emulation on GitHub's (amd64) runners rather than natively — expect the
+backend workflow to take several times longer than before.
+
 ## MongoDB Atlas setup
 
 1. Create a free **M0** cluster (512MB storage, shared RAM/vCPU, 3-node replica set included).
