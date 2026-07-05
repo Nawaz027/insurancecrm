@@ -1,0 +1,28 @@
+# Reference compose file for deployment — pulls the images published by CI rather than
+# building from source. Requires a .env file (or exported vars) alongside this file with:
+#   DOCKERHUB_USERNAME=<your docker hub username>
+#   JWT_SECRET=<32+ char random secret>
+#   MONGODB_URI=<Atlas connection string, includes the database name>
+#   TAG=latest   (or a specific commit SHA to pin a version)
+#
+# Usage:
+#   docker compose pull
+#   docker compose up -d
+
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/insurancecrm:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      MONGODB_URI: ${MONGODB_URI:?MONGODB_URI must be set}
+    expose:
+      - "8081"
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/insurancecrm-fe:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"

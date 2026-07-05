@@ -1,0 +1,11 @@
+build/
+.gradle/
+.git/
+.idea/
+.claude/
+.vscode/
+*.md
+.gitignore
+.gitattributes
+Dockerfile
+docker-compose.yml
