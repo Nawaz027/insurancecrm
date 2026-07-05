@@ -1,0 +1,127 @@
+package com.example.insurancecrm.service;
+
+import com.example.insurancecrm.domain.CommunicationLog;
+import com.example.insurancecrm.domain.Customer;
+import com.example.insurancecrm.domain.Lead;
+import com.example.insurancecrm.domain.User;
+import com.example.insurancecrm.dto.request.CreateCommunicationLogRequest;
+import com.example.insurancecrm.dto.response.CommunicationLogResponse;
+import com.example.insurancecrm.exception.ApiException;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
+import com.example.insurancecrm.repository.CustomerRepository;
+import com.example.insurancecrm.repository.LeadRepository;
+import com.example.insurancecrm.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class CommunicationLogService {
+
+    private final CommunicationLogRepository logRepository;
+    private final CustomerRepository customerRepository;
+    private final LeadRepository leadRepository;
+    private final UserRepository userRepository;
+
+    public List<CommunicationLogResponse> getByCustomer(String customerId) {
+        customerRepository.findById(customerId)
+                .orElseThrow(() -> ApiException.notFound("Customer not found: " + customerId));
+        return logRepository.findByCustomerIdOrderByLoggedAtDesc(customerId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    public List<CommunicationLogResponse> getByLead(String leadId) {
+        leadRepository.findById(leadId)
+                .orElseThrow(() -> ApiException.notFound("Lead not found: " + leadId));
+        return logRepository.findByLeadIdOrderByLoggedAtDesc(leadId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    public CommunicationLogResponse logForCustomer(String customerId,
+                                                    CreateCommunicationLogRequest req,
+                                                    String userId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> ApiException.notFound("Customer not found: " + customerId));
+
+        User agent = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("User not found: " + userId));
+
+        CommunicationLog log = CommunicationLog.builder()
+                .customerId(customerId)
+                .channel(req.getChannel())
+                .outcome(req.getOutcome())
+                .notes(req.getNotes())
+                .durationMinutes(req.getDurationMinutes())
+                .followUpDate(req.getFollowUpDate())
+                .loggedBy(userId)
+                .loggedByName(agent.getName())
+                .loggedAt(LocalDateTime.now())
+                .build();
+
+        CommunicationLogResponse response = toResponse(logRepository.save(log));
+
+        customer.setLastOutcome(req.getOutcome());
+        customer.setUpdatedAt(LocalDateTime.now());
+        customerRepository.save(customer);
+
+        return response;
+    }
+
+    public CommunicationLogResponse logForLead(String leadId,
+                                               CreateCommunicationLogRequest req,
+                                               String userId) {
+        Lead lead = leadRepository.findById(leadId)
+                .orElseThrow(() -> ApiException.notFound("Lead not found: " + leadId));
+
+        User agent = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("User not found: " + userId));
+
+        CommunicationLog log = CommunicationLog.builder()
+                .leadId(leadId)
+                .channel(req.getChannel())
+                .outcome(req.getOutcome())
+                .notes(req.getNotes())
+                .durationMinutes(req.getDurationMinutes())
+                .followUpDate(req.getFollowUpDate())
+                .loggedBy(userId)
+                .loggedByName(agent.getName())
+                .loggedAt(LocalDateTime.now())
+                .build();
+
+        CommunicationLogResponse response = toResponse(logRepository.save(log));
+
+        lead.setLastOutcome(req.getOutcome());
+        lead.setUpdatedAt(LocalDateTime.now());
+        leadRepository.save(lead);
+
+        return response;
+    }
+
+    public void delete(String id, String requesterId, boolean isAdmin) {
+        CommunicationLog log = logRepository.findById(id)
+                .orElseThrow(() -> ApiException.notFound("Log not found: " + id));
+        if (!isAdmin && !log.getLoggedBy().equals(requesterId)) {
+            throw ApiException.forbidden("You can only delete your own logs");
+        }
+        logRepository.delete(log);
+    }
+
+    private CommunicationLogResponse toResponse(CommunicationLog l) {
+        return CommunicationLogResponse.builder()
+                .id(l.getId())
+                .customerId(l.getCustomerId())
+                .leadId(l.getLeadId())
+                .channel(l.getChannel())
+                .outcome(l.getOutcome())
+                .notes(l.getNotes())
+                .durationMinutes(l.getDurationMinutes())
+                .followUpDate(l.getFollowUpDate())
+                .loggedBy(l.getLoggedBy())
+                .loggedByName(l.getLoggedByName())
+                .loggedAt(l.getLoggedAt())
+                .build();
+    }
+}

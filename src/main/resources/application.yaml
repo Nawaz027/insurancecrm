@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: insurancecrm
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/test}
+      auto-index-creation: true
+
+server:
+  port: 8081
+
+app:
+  jwt:
+    # No default on purpose — the app must fail fast at startup rather than silently sign
+    # tokens with a publicly-known secret. Set JWT_SECRET (32+ chars) in your environment.
+    secret: ${JWT_SECRET}
+    access-expiry-minutes: 60
+    refresh-expiry-days: 30
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    com.example.insurancecrm: DEBUG
