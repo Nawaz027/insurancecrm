@@ -1,6 +1,6 @@
 # Deployment
 
-How InsuredIndex's (insuredindex.com) two apps get from a merge on GitHub to running containers,
+How InsuredIndex's (insuredindex.inurek.com) two apps get from a merge on GitHub to running containers,
 and what the Oracle Cloud deployment needs from this side.
 
 > **Verified locally on 2026-07-05**: both images build and run correctly together (backend +
@@ -119,7 +119,7 @@ by the local verification run below.
 regardless of whether nginx is reverse-proxying same-origin underneath, and Spring's CORS filter
 checks it strictly against this list — so without the real domain in it, **every login and every
 write request in production would fail with `403 Invalid CORS request`**, even though the app looks
-fine and GETs may still work. It now includes `https://insuredindex.com`, `https://www.insuredindex.com`,
+fine and GETs may still work. It now includes `https://insuredindex.inurek.com`, `https://www.insuredindex.inurek.com`,
 and `http://localhost:8080` (for the local Docker verification flow below). If the production domain
 ever changes, or you add a `www.`/staging subdomain, update this list and rebuild — caught by testing
 a real browser login (not just curl) against the local Docker stack, see below.

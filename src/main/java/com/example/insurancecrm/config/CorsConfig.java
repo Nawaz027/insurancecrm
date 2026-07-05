@@ -18,8 +18,8 @@ public class CorsConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://localhost:8080",
-                "https://insuredindex.com",
-                "https://www.insuredindex.com"
+                "https://insuredindex.inurek.com",
+                "https://www.insuredindex.inurek.com"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
