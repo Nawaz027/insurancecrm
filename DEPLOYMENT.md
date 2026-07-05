@@ -168,6 +168,109 @@ docker compose pull
 docker compose up -d
 ```
 
+## Alternative: building on the server instead of pulling from GHCR
+
+The Oracle VM currently builds both images directly on the server from a git clone, rather than
+pulling the published GHCR images. That's a supported path, but only if followed exactly —
+deviating from it is what caused a real incident: a stale pre-fix image silently kept serving
+traffic after the Mongo/CORS bugs were fixed on GitHub, and a hand-edited `Dockerfile` on the
+server reintroduced a hardcoded admin password and a `JWT_SECRET` that randomly regenerates on
+every restart (silently logging out every user on every deploy). Both were only caught by noticing
+the app name in the logs hadn't changed after a "fix."
+
+### One-time setup
+
+```bash
+mkdir -p ~/CRM-proj && cd ~/CRM-proj
+git clone https://github.com/Nawaz027/insurancecrm.git
+git clone https://github.com/Nawaz027/insurancecrm-fe.git
+```
+
+The committed `docker-compose.yml` in this repo pulls from GHCR (see above) — the server needs its
+own variant that builds from source instead. **Do not hand-edit `Dockerfile` beyond what's in this
+repo, and don't add anything to the compose file's `services:` beyond swapping `image:` for
+`build:`.** Any other local edit (hardcoded env defaults, custom entrypoints, etc.) silently drifts
+from what's actually tested, and won't survive being overwritten back to the real file later:
+
+```yaml
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: insurancecrm:local
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      MONGODB_URI: ${MONGODB_URI:?MONGODB_URI must be set}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ../insurancecrm-fe
+      dockerfile: Dockerfile
+    image: insurancecrm-fe:local
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+```
+
+`.env` next to it needs the same variables as the GHCR-pull method above (`JWT_SECRET`,
+`MONGODB_URI`, plus `ADMIN_EMAIL`/`ADMIN_PASSWORD` for first boot only).
+
+### Every deploy after that
+
+```bash
+cd ~/CRM-proj/insurancecrm && git pull origin master
+cd ../insurancecrm-fe && git pull origin master
+cd ../insurancecrm
+docker compose up -d --build
+```
+
+**`--build` is not optional.** The image has a fixed tag (`insurancecrm:local`), so Compose reuses
+whatever was built last time if it's left off — `git pull` alone changes nothing that's running.
+
+### Verifying the deploy actually took
+
+```bash
+docker ps                                    # both containers: Up, not Restarting
+docker logs insurancecrm-backend-1 --tail 50
+```
+
+Check for, in this order:
+- `[insuredindex]` in the log line prefix, **not** `[insurancecrm]` — proves this is current code,
+  not a stale image from before the rebrand (and therefore before the Mongo/CORS fixes too, since
+  they landed in the same commit).
+- `Monitor thread successfully connected to server` — confirms `MONGODB_URI` is correct and Atlas
+  is reachable (check Atlas's Network Access allowlist includes this VM's IP if this line is
+  missing and a `Connection refused` to `localhost:27017` shows up instead).
+- `Started InsurancecrmApplication in ... seconds` with no exception logged before it.
+- `Initial admin account created: <email>` — only appears against a genuinely empty database.
+
+Then actually log in through the browser and confirm the forced password-change screen appears —
+that's the real end-to-end proof, not just a clean-looking log.
+
+### Rolling back (build-on-server method)
+
+There's no `:vN` tag to fall back to here, since nothing is pulled from a registry — roll back
+with git instead:
+
+```bash
+cd ~/CRM-proj/insurancecrm
+git log --oneline -10        # find the last known-good commit
+git checkout <commit-sha>
+docker compose up -d --build
+```
+
+Repeat in `insurancecrm-fe` if the frontend also needs rolling back. Switching this VM to pull
+published GHCR images instead (see "Running via docker-compose" above) would make rollback as
+simple as changing `BACKEND_TAG`/`FRONTEND_TAG` in `.env` — worth doing once this is stable.
+
 ## Verifying a build locally
 
 `docker-compose.local.yml` builds both images from source and runs them with a throwaway local
