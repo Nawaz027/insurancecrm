@@ -2,6 +2,8 @@ HELP.md
 .gradle
 build/
 .claude/
+.env
+!.env.example
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

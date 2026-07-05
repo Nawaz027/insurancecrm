@@ -221,7 +221,8 @@ services:
 ```
 
 `.env` next to it needs the same variables as the GHCR-pull method above (`JWT_SECRET`,
-`MONGODB_URI`, plus `ADMIN_EMAIL`/`ADMIN_PASSWORD` for first boot only).
+`MONGODB_URI`, plus `ADMIN_EMAIL`/`ADMIN_PASSWORD` for first boot only). Copy `.env.example` from
+this repo as a starting point: `cp .env.example .env`, then fill in the real values.
 
 ### Every deploy after that
 
