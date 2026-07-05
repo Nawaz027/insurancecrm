@@ -33,6 +33,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/nawaz027/insuredindex:latest
-            ghcr.io/nawaz027/insuredindex:${{ github.sha }}
-            ghcr.io/nawaz027/insuredindex:v${{ github.run_number }}
+            ghcr.io/intraevolve-lms/insuredindex:latest
+            ghcr.io/intraevolve-lms/insuredindex:${{ github.sha }}
+            ghcr.io/intraevolve-lms/insuredindex:v${{ github.run_number }}

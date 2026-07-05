@@ -12,7 +12,7 @@ and what the Oracle Cloud deployment needs from this side.
 ```
 GitHub (push to main/master)
   → GitHub Actions builds Docker image
-  → pushes to GitHub Container Registry (ghcr.io/nawaz027/insuredindex, ghcr.io/nawaz027/insuredindex-fe)
+  → pushes to GitHub Container Registry (ghcr.io/intraevolve-lms/insuredindex, ghcr.io/intraevolve-lms/insuredindex-fe)
 
 Oracle Cloud VM
   → docker compose pull && docker compose up -d
@@ -50,9 +50,10 @@ what replaced the earlier Docker Hub setup, which needed `DOCKERHUB_USERNAME`/`D
 repo secrets and broke when those credentials went stale.
 
 **One manual, one-time step**: freshly-published GHCR packages default to **private** even from a
-public repo. After the first successful push, go to the package on GitHub (your profile → Packages
-→ `insuredindex` / `insuredindex-fe`) → Package settings → Change visibility → **Public**. After
-that, anyone can `docker pull ghcr.io/nawaz027/insuredindex:latest` with no login at all.
+public repo. After the first successful push, go to the org's Packages page
+(`github.com/orgs/intraevolve-lms/packages`) → `insuredindex` / `insuredindex-fe` → Package settings
+→ Change visibility → **Public**. After that, anyone can `docker pull
+ghcr.io/intraevolve-lms/insuredindex:latest` with no login at all.
 
 Each push produces three tags: `:latest`, `:<commit-sha>`, and `:v<run-number>` — the last one is
 GitHub Actions' own auto-incrementing build counter (1, 2, 3, ...), a human-friendly alternative to
@@ -191,8 +192,8 @@ the app name in the logs hadn't changed after a "fix."
 
 ```bash
 mkdir -p ~/CRM-proj && cd ~/CRM-proj
-git clone https://github.com/Nawaz027/insurancecrm.git
-git clone https://github.com/Nawaz027/insurancecrm-fe.git
+git clone https://github.com/intraevolve-lms/insurancecrm.git
+git clone https://github.com/intraevolve-lms/insurancecrm-fe.git
 ```
 
 The committed `docker-compose.yml` in this repo pulls from GHCR (see above) — the server needs its

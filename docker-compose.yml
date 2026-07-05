@@ -15,7 +15,7 @@
 
 services:
   backend:
-    image: ghcr.io/nawaz027/insuredindex:${BACKEND_TAG:-latest}
+    image: ghcr.io/intraevolve-lms/insuredindex:${BACKEND_TAG:-latest}
     restart: unless-stopped
     environment:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
@@ -26,7 +26,7 @@ services:
       - "8081"
 
   frontend:
-    image: ghcr.io/nawaz027/insuredindex-fe:${FRONTEND_TAG:-latest}
+    image: ghcr.io/intraevolve-lms/insuredindex-fe:${FRONTEND_TAG:-latest}
     restart: unless-stopped
     depends_on:
       - backend
