@@ -32,4 +32,7 @@ public class User {
     private boolean mustChangePassword;
 
     private LocalDateTime createdAt;
+
+    /** Tokens issued before this instant are rejected — set by an admin force-logout. Null means no forced logout has ever happened. */
+    private LocalDateTime tokensInvalidBefore;
 }

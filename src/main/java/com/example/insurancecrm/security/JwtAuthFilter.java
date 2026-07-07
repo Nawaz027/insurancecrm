@@ -1,5 +1,7 @@
 package com.example.insurancecrm.security;
 
+import com.example.insurancecrm.domain.User;
+import com.example.insurancecrm.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +23,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -29,7 +32,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
 
         if (token != null && jwtUtil.isAccessToken(token)
-                && SecurityContextHolder.getContext().getAuthentication() == null) {
+                && SecurityContextHolder.getContext().getAuthentication() == null
+                && !isRevoked(token)) {
             String email = jwtUtil.extractEmail(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
@@ -40,6 +44,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /** True if an admin force-logout invalidated this token after it was issued. */
+    private boolean isRevoked(String token) {
+        User user = userRepository.findByEmail(jwtUtil.extractEmail(token)).orElse(null);
+        return user != null && jwtUtil.isIssuedBefore(token, user.getTokensInvalidBefore());
     }
 
     private String extractToken(HttpServletRequest request) {

@@ -47,6 +47,10 @@ public class AuthService {
             throw ApiException.forbidden("This account has been deactivated");
         }
 
+        if (jwtUtil.isIssuedBefore(refreshToken, user.getTokensInvalidBefore())) {
+            throw ApiException.forbidden("Your session was ended by an administrator — please log in again");
+        }
+
         AuthResponse response = buildAuthResponse(user);
         response.setRefreshToken(refreshToken);
         return response;
