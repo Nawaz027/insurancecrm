@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -76,17 +77,15 @@ class UserControllerForceLogoutIT {
     }
 
     private org.springframework.test.web.servlet.ResultActions probeAgentAccessToken() throws Exception {
-        // /api/auth/change-password only needs a valid authenticated principal, any role — a
-        // deliberately wrong current password still proves the token was accepted (400, not 401).
-        return mockMvc.perform(post("/api/auth/change-password").header("Authorization", "Bearer " + agentAccessToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of(
-                        "currentPassword", "deliberately-wrong", "newPassword", "Whatever@123"))));
+        // GET /api/customers only needs a valid authenticated principal, any role (unlike
+        // /api/auth/change-password, which is admin-only) — good for proving whether a token
+        // is still accepted at all, independent of what it's authorized to do.
+        return mockMvc.perform(get("/api/customers").header("Authorization", "Bearer " + agentAccessToken));
     }
 
     @Test
     void forceLogout_revokesAgentAccessTokenImmediately() throws Exception {
-        probeAgentAccessToken().andExpect(status().isBadRequest());
+        probeAgentAccessToken().andExpect(status().isOk());
 
         mockMvc.perform(post("/api/users/force-logout").header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)

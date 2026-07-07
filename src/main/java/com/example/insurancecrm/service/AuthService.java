@@ -56,7 +56,8 @@ public class AuthService {
         return response;
     }
 
-    /** Self-service password change — requires the current password, also clears mustChangePassword. */
+    /** Self-service password change, admin-only (enforced by @PreAuthorize on the controller) —
+     *  requires the current password, also clears mustChangePassword. */
     public void changePassword(String email, ChangePasswordRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> ApiException.notFound("User not found"));
