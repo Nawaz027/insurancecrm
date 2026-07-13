@@ -5,6 +5,7 @@ import com.example.insurancecrm.domain.Lead;
 import com.example.insurancecrm.domain.User;
 import com.example.insurancecrm.dto.request.CreateLeadRequest;
 import com.example.insurancecrm.dto.request.UpdateLeadStatusRequest;
+import com.example.insurancecrm.dto.response.BulkDeleteResponse;
 import com.example.insurancecrm.dto.response.LeadResponse;
 import com.example.insurancecrm.dto.response.LeadSummaryResponse;
 import com.example.insurancecrm.dto.response.PagedResponse;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -190,6 +192,22 @@ public class LeadService {
 
     public void delete(String id) {
         leadRepository.delete(findById(id));
+    }
+
+    public BulkDeleteResponse bulkDelete(List<String> ids) {
+        List<String> distinctIds = ids.stream().distinct().toList();
+        List<Lead> found = leadRepository.findAllById(distinctIds);
+
+        Set<String> foundIds = found.stream().map(Lead::getId).collect(Collectors.toSet());
+        List<String> notFound = distinctIds.stream().filter(id -> !foundIds.contains(id)).toList();
+
+        leadRepository.deleteAll(found);
+
+        return BulkDeleteResponse.builder()
+                .requestedCount(distinctIds.size())
+                .deletedCount(found.size())
+                .notFoundIds(notFound)
+                .build();
     }
 
     public Lead findById(String id) {

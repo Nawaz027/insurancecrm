@@ -19,10 +19,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -150,6 +152,24 @@ class CustomerControllerAccessIT {
                         .content(objectMapper.writeValueAsString(
                                 Map.of("customerIds", java.util.List.of(customerId), "agentId", agent.getId()))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void bulkDelete_agent_isForbidden() throws Exception {
+        mockMvc.perform(delete("/api/customers/bulk-delete").header("Authorization", "Bearer " + agentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("ids", List.of(customerId)))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void bulkDelete_admin_isAllowed_andReportsNotFoundIds() throws Exception {
+        mockMvc.perform(delete("/api/customers/bulk-delete").header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("ids", List.of(customerId, "missing-id")))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.deletedCount").value(1))
+                .andExpect(jsonPath("$.data.notFoundIds[0]").value("missing-id"));
     }
 
     @Test

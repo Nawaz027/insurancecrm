@@ -2,9 +2,11 @@ package com.example.insurancecrm.controller;
 
 import com.example.insurancecrm.domain.User;
 import com.example.insurancecrm.dto.request.BulkAssignRequest;
+import com.example.insurancecrm.dto.request.BulkDeleteRequest;
 import com.example.insurancecrm.dto.request.CreateCustomerRequest;
 import com.example.insurancecrm.dto.response.ApiResponse;
 import com.example.insurancecrm.dto.response.BulkAssignResponse;
+import com.example.insurancecrm.dto.response.BulkDeleteResponse;
 import com.example.insurancecrm.dto.response.CustomerResponse;
 import com.example.insurancecrm.dto.response.PagedResponse;
 import com.example.insurancecrm.enums.CommunicationOutcome;
@@ -136,6 +138,18 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<BulkAssignResponse>> bulkAssignAgent(@Valid @RequestBody BulkAssignRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
                 customerService.bulkAssignAgent(request.getCustomerIds(), request.getAgentId())));
+    }
+
+    @Operation(summary = "Bulk-delete customers", description = "Admin-only. Permanently deletes every given customer in one request. Customer IDs that don't exist are skipped and reported rather than failing the whole request.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Customers deleted"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Admin role required", content = @Content),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed", content = @Content)
+    })
+    @DeleteMapping("/bulk-delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BulkDeleteResponse>> bulkDelete(@Valid @RequestBody BulkDeleteRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(customerService.bulkDelete(request.getIds())));
     }
 
     @Operation(summary = "Delete a customer", description = "Admin-only. Permanently removes the customer record.")

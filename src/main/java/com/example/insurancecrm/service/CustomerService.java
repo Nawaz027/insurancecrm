@@ -5,6 +5,7 @@ import com.example.insurancecrm.domain.Customer;
 import com.example.insurancecrm.domain.User;
 import com.example.insurancecrm.dto.request.CreateCustomerRequest;
 import com.example.insurancecrm.dto.response.BulkAssignResponse;
+import com.example.insurancecrm.dto.response.BulkDeleteResponse;
 import com.example.insurancecrm.dto.response.CustomerResponse;
 import com.example.insurancecrm.dto.response.PagedResponse;
 import com.example.insurancecrm.enums.CommunicationOutcome;
@@ -153,6 +154,22 @@ public class CustomerService {
                 .assignedCount(saved.size())
                 .notFoundCustomerIds(notFound)
                 .customers(enrichAndMap(saved))
+                .build();
+    }
+
+    public BulkDeleteResponse bulkDelete(List<String> ids) {
+        List<String> distinctIds = ids.stream().distinct().toList();
+        List<Customer> found = customerRepository.findAllById(distinctIds);
+
+        Set<String> foundIds = found.stream().map(Customer::getId).collect(Collectors.toSet());
+        List<String> notFound = distinctIds.stream().filter(id -> !foundIds.contains(id)).toList();
+
+        customerRepository.deleteAll(found);
+
+        return BulkDeleteResponse.builder()
+                .requestedCount(distinctIds.size())
+                .deletedCount(found.size())
+                .notFoundIds(notFound)
                 .build();
     }
 

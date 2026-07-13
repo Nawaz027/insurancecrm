@@ -1,8 +1,10 @@
 package com.example.insurancecrm.controller;
 
+import com.example.insurancecrm.dto.request.BulkDeleteRequest;
 import com.example.insurancecrm.dto.request.CreateLeadRequest;
 import com.example.insurancecrm.dto.request.UpdateLeadStatusRequest;
 import com.example.insurancecrm.dto.response.ApiResponse;
+import com.example.insurancecrm.dto.response.BulkDeleteResponse;
 import com.example.insurancecrm.dto.response.LeadResponse;
 import com.example.insurancecrm.dto.response.LeadSummaryResponse;
 import com.example.insurancecrm.dto.response.PagedResponse;
@@ -99,6 +101,13 @@ public class LeadController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         leadService.delete(id);
         return ResponseEntity.ok(ApiResponse.noContent("Lead deleted"));
+    }
+
+    @Operation(summary = "Bulk-delete leads", description = "Admin-only. Permanently deletes every given lead in one request. Lead IDs that don't exist are skipped and reported rather than failing the whole request.")
+    @DeleteMapping("/bulk-delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<BulkDeleteResponse>> bulkDelete(@Valid @RequestBody BulkDeleteRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(leadService.bulkDelete(request.getIds())));
     }
 
     private String getUserId(Authentication auth) {
