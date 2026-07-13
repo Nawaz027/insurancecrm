@@ -3,7 +3,7 @@ package com.example.insurancecrm.dto.response;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -16,7 +16,7 @@ public class ReminderResponse {
     private String entityId;
     private String entityName;   // customer or lead name
     private String description;
-    private LocalDate dueDate;
+    private LocalDateTime dueDate;
     private long overdueDays;    // 0 = due today, >0 = overdue
     private String assignedToId;
     private String assignedToName;

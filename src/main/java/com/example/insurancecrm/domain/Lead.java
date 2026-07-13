@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Document(collection = "leads")
@@ -44,7 +43,7 @@ public class Lead {
 
     private String assignedAgentId;
 
-    private LocalDate followUpDate;
+    private LocalDateTime followUpDate;
 
     private LocalDateTime lastContactedAt;
 

@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +35,7 @@ class ReminderServiceTest {
     @InjectMocks
     private ReminderService reminderService;
 
-    private final LocalDate today = LocalDate.now();
+    private final LocalDateTime today = LocalDateTime.now();
 
     @BeforeEach
     void setUp() {
@@ -44,7 +44,7 @@ class ReminderServiceTest {
         lenient().when(commLogRepository.findAll()).thenReturn(List.of());
     }
 
-    private Lead lead(String id, LocalDate followUpDate, LeadStatus status) {
+    private Lead lead(String id, LocalDateTime followUpDate, LeadStatus status) {
         return Lead.builder().id(id).name("Lead " + id).phone("900000000" + id.hashCode() % 10)
                 .followUpDate(followUpDate).status(status).assignedAgentId("agent-1").build();
     }
