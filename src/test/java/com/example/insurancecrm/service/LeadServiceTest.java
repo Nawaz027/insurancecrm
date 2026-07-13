@@ -8,6 +8,7 @@ import com.example.insurancecrm.dto.response.LeadResponse;
 import com.example.insurancecrm.enums.LeadSource;
 import com.example.insurancecrm.enums.LeadStatus;
 import com.example.insurancecrm.exception.ApiException;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
 import com.example.insurancecrm.repository.CustomerRepository;
 import com.example.insurancecrm.repository.LeadRepository;
 import com.example.insurancecrm.repository.UserRepository;
@@ -36,6 +37,7 @@ class LeadServiceTest {
     @Mock private LeadRepository leadRepository;
     @Mock private UserRepository userRepository;
     @Mock private CustomerRepository customerRepository;
+    @Mock private CommunicationLogRepository communicationLogRepository;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
@@ -252,5 +254,26 @@ class LeadServiceTest {
         when(leadRepository.findById("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> leadService.delete("missing")).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void delete_alsoCascadesCommunicationLogs() {
+        // Regression: a lead's logged calls used to survive deletion, leaving a follow-up
+        // reminder pointing at a lead that no longer exists (see ReminderService).
+        when(leadRepository.findById("lead-1")).thenReturn(Optional.of(agentOwnedLead));
+
+        leadService.delete("lead-1");
+
+        verify(communicationLogRepository).deleteByLeadId("lead-1");
+    }
+
+    @Test
+    void bulkDelete_alsoCascadesCommunicationLogsForEachDeletedLead() {
+        when(leadRepository.findAllById(List.of("lead-1")))
+                .thenReturn(List.of(agentOwnedLead));
+
+        leadService.bulkDelete(List.of("lead-1"));
+
+        verify(communicationLogRepository).deleteByLeadIdIn(List.of("lead-1"));
     }
 }

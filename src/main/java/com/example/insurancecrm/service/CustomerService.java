@@ -11,6 +11,7 @@ import com.example.insurancecrm.dto.response.PagedResponse;
 import com.example.insurancecrm.enums.CommunicationOutcome;
 import com.example.insurancecrm.exception.ApiException;
 import com.example.insurancecrm.repository.AuditLogRepository;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
 import com.example.insurancecrm.repository.CustomerRepository;
 import com.example.insurancecrm.repository.UserRepository;
 import com.example.insurancecrm.security.AccessControl;
@@ -40,6 +41,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final CommunicationLogRepository communicationLogRepository;
     private final MongoTemplate mongoTemplate;
 
     private static final String CUSTOMER_ENTITY_TYPE = "CUSTOMER";
@@ -165,6 +167,7 @@ public class CustomerService {
         List<String> notFound = distinctIds.stream().filter(id -> !foundIds.contains(id)).toList();
 
         customerRepository.deleteAll(found);
+        communicationLogRepository.deleteByCustomerIdIn(foundIds.stream().toList());
 
         return BulkDeleteResponse.builder()
                 .requestedCount(distinctIds.size())
@@ -223,6 +226,10 @@ public class CustomerService {
 
     public void delete(String id) {
         customerRepository.delete(findById(id));
+        // Otherwise a follow-up reminder derived from these logs would keep surfacing for a
+        // customer that no longer exists — see ReminderService, which has no way to tell a
+        // deleted customer apart from one it just hasn't loaded yet.
+        communicationLogRepository.deleteByCustomerId(id);
     }
 
     public Customer findById(String id) {

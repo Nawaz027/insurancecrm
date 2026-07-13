@@ -58,6 +58,7 @@ class ReminderServiceTest {
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getOverdueDays()).isZero();
         assertThat(result.get(0).getType()).isEqualTo(ReminderResponse.ReminderType.LEAD_FOLLOWUP);
+        assertThat(result.get(0).getEntityKind()).isEqualTo(ReminderResponse.EntityKind.LEAD);
     }
 
     @Test
@@ -149,6 +150,7 @@ class ReminderServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getEntityName()).isEqualTo("Customer One");
+        assertThat(result.get(0).getEntityKind()).isEqualTo(ReminderResponse.EntityKind.CUSTOMER);
     }
 
     @Test
@@ -179,6 +181,10 @@ class ReminderServiceTest {
         List<ReminderResponse> result = reminderService.getReminders("agent-1", false);
 
         assertThat(result.get(0).getEntityName()).isEqualTo("Prospective Lead");
+        // Regression: the FE previously had no way to tell a COMMUNICATION_FOLLOWUP reminder
+        // logged against a lead apart from one logged against a customer, and mis-routed clicks
+        // on lead reminders to /customers/{leadId}.
+        assertThat(result.get(0).getEntityKind()).isEqualTo(ReminderResponse.EntityKind.LEAD);
     }
 
     @Test

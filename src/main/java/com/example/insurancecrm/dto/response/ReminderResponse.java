@@ -11,9 +11,13 @@ public class ReminderResponse {
 
     public enum ReminderType { LEAD_FOLLOWUP, COMMUNICATION_FOLLOWUP }
 
+    /** What entityId refers to — COMMUNICATION_FOLLOWUP reminders can be logged against either. */
+    public enum EntityKind { CUSTOMER, LEAD }
+
     private String id;
     private ReminderType type;
     private String entityId;
+    private EntityKind entityKind;
     private String entityName;   // customer or lead name
     private String description;
     private LocalDateTime dueDate;

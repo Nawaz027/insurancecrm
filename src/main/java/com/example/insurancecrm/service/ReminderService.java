@@ -56,6 +56,7 @@ public class ReminderService {
                         .id(l.getId())
                         .type(ReminderType.LEAD_FOLLOWUP)
                         .entityId(l.getId())
+                        .entityKind(ReminderResponse.EntityKind.LEAD)
                         .entityName(l.getName())
                         .description("Follow up with lead" + (l.getPhone() != null ? " · " + l.getPhone() : ""))
                         .dueDate(l.getFollowUpDate())
@@ -78,13 +79,15 @@ public class ReminderService {
             if (c.getFollowUpDate() == null) continue;
             if (!c.getFollowUpDate().isAfter(now)) {
                 long overdue = ChronoUnit.DAYS.between(c.getFollowUpDate().toLocalDate(), now.toLocalDate());
-                String entityName = c.getCustomerId() != null
+                boolean isCustomer = c.getCustomerId() != null;
+                String entityName = isCustomer
                         ? customerNames.getOrDefault(c.getCustomerId(), "Customer")
                         : leadNames.getOrDefault(c.getLeadId(), "Lead");
                 reminders.add(ReminderResponse.builder()
                         .id(c.getId())
                         .type(ReminderType.COMMUNICATION_FOLLOWUP)
-                        .entityId(c.getCustomerId() != null ? c.getCustomerId() : c.getLeadId())
+                        .entityId(isCustomer ? c.getCustomerId() : c.getLeadId())
+                        .entityKind(isCustomer ? ReminderResponse.EntityKind.CUSTOMER : ReminderResponse.EntityKind.LEAD)
                         .entityName(entityName)
                         .description("Follow up after " + c.getChannel().name().toLowerCase().replace("_", " "))
                         .dueDate(c.getFollowUpDate())

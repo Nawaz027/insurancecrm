@@ -8,6 +8,7 @@ import com.example.insurancecrm.dto.response.CustomerResponse;
 import com.example.insurancecrm.enums.Role;
 import com.example.insurancecrm.exception.ApiException;
 import com.example.insurancecrm.repository.AuditLogRepository;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
 import com.example.insurancecrm.repository.CustomerRepository;
 import com.example.insurancecrm.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,6 +38,7 @@ class CustomerServiceTest {
     @Mock private CustomerRepository customerRepository;
     @Mock private UserRepository userRepository;
     @Mock private AuditLogRepository auditLogRepository;
+    @Mock private CommunicationLogRepository communicationLogRepository;
     @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
@@ -246,5 +248,26 @@ class CustomerServiceTest {
         customerService.delete("cust-1");
 
         verify(customerRepository).delete(agentOwnedCustomer);
+    }
+
+    @Test
+    void delete_alsoCascadesCommunicationLogs() {
+        // Regression: a customer's logged calls used to survive deletion, leaving a follow-up
+        // reminder pointing at a customer that no longer exists (see ReminderService).
+        when(customerRepository.findById("cust-1")).thenReturn(Optional.of(agentOwnedCustomer));
+
+        customerService.delete("cust-1");
+
+        verify(communicationLogRepository).deleteByCustomerId("cust-1");
+    }
+
+    @Test
+    void bulkDelete_alsoCascadesCommunicationLogsForEachDeletedCustomer() {
+        when(customerRepository.findAllById(List.of("cust-1")))
+                .thenReturn(List.of(agentOwnedCustomer));
+
+        customerService.bulkDelete(List.of("cust-1"));
+
+        verify(communicationLogRepository).deleteByCustomerIdIn(List.of("cust-1"));
     }
 }

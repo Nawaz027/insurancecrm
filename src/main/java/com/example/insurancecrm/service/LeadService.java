@@ -12,6 +12,7 @@ import com.example.insurancecrm.dto.response.PagedResponse;
 import com.example.insurancecrm.enums.CommunicationOutcome;
 import com.example.insurancecrm.enums.LeadStatus;
 import com.example.insurancecrm.exception.ApiException;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
 import com.example.insurancecrm.repository.CustomerRepository;
 import com.example.insurancecrm.repository.LeadRepository;
 import com.example.insurancecrm.repository.UserRepository;
@@ -43,6 +44,7 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
+    private final CommunicationLogRepository communicationLogRepository;
     private final MongoTemplate mongoTemplate;
 
     private static final List<LeadStatus> CLOSED_STATUSES = List.of(LeadStatus.CONVERTED, LeadStatus.LOST);
@@ -192,6 +194,10 @@ public class LeadService {
 
     public void delete(String id) {
         leadRepository.delete(findById(id));
+        // Otherwise a follow-up reminder derived from these logs would keep surfacing for a
+        // lead that no longer exists — see ReminderService, which has no way to tell a deleted
+        // lead apart from one it just hasn't loaded yet.
+        communicationLogRepository.deleteByLeadId(id);
     }
 
     public BulkDeleteResponse bulkDelete(List<String> ids) {
@@ -202,6 +208,7 @@ public class LeadService {
         List<String> notFound = distinctIds.stream().filter(id -> !foundIds.contains(id)).toList();
 
         leadRepository.deleteAll(found);
+        communicationLogRepository.deleteByLeadIdIn(foundIds.stream().toList());
 
         return BulkDeleteResponse.builder()
                 .requestedCount(distinctIds.size())
