@@ -2,14 +2,13 @@ package com.example.insurancecrm.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 @Configuration
 public class RequestLoggingConfig {
 
     @Bean
-    public CommonsRequestLoggingFilter requestLoggingFilter() {
-        CommonsRequestLoggingFilter filter = new CommonsRequestLoggingFilter();
+    public CredentialRedactingRequestLoggingFilter requestLoggingFilter() {
+        CredentialRedactingRequestLoggingFilter filter = new CredentialRedactingRequestLoggingFilter();
         filter.setIncludeQueryString(true);
         filter.setIncludePayload(true);
         filter.setMaxPayloadLength(1000);

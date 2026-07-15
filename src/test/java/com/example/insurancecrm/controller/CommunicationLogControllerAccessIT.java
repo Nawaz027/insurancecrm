@@ -1,11 +1,15 @@
 package com.example.insurancecrm.controller;
 
+import com.example.insurancecrm.domain.CommunicationLog;
 import com.example.insurancecrm.domain.Customer;
 import com.example.insurancecrm.domain.Lead;
 import com.example.insurancecrm.domain.User;
+import com.example.insurancecrm.enums.CommunicationChannel;
+import com.example.insurancecrm.enums.CommunicationOutcome;
 import com.example.insurancecrm.enums.LeadSource;
 import com.example.insurancecrm.enums.LeadStatus;
 import com.example.insurancecrm.enums.Role;
+import com.example.insurancecrm.repository.CommunicationLogRepository;
 import com.example.insurancecrm.repository.CustomerRepository;
 import com.example.insurancecrm.repository.LeadRepository;
 import com.example.insurancecrm.repository.UserRepository;
@@ -42,6 +46,7 @@ class CommunicationLogControllerAccessIT {
     @Autowired private UserRepository userRepository;
     @Autowired private CustomerRepository customerRepository;
     @Autowired private LeadRepository leadRepository;
+    @Autowired private CommunicationLogRepository logRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtUtil jwtUtil;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -56,6 +61,8 @@ class CommunicationLogControllerAccessIT {
     private String otherToken;
     private String customerId;
     private String leadId;
+    private String ownerLogId;
+    private String otherLogId;
 
     @BeforeEach
     void setUp() {
@@ -86,6 +93,15 @@ class CommunicationLogControllerAccessIT {
                 .status(LeadStatus.NEW).assignedAgentId(owner.getId())
                 .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
         leadId = lead.getId();
+
+        ownerLogId = logRepository.save(CommunicationLog.builder()
+                .customerId(customerId).channel(CommunicationChannel.CALL)
+                .outcome(CommunicationOutcome.CALLBACK).loggedBy(owner.getId())
+                .loggedByName(owner.getName()).loggedAt(LocalDateTime.now()).build()).getId();
+        otherLogId = logRepository.save(CommunicationLog.builder()
+                .customerId(customerId).channel(CommunicationChannel.CALL)
+                .outcome(CommunicationOutcome.PROSPECT).loggedBy(other.getId())
+                .loggedByName(other.getName()).loggedAt(LocalDateTime.now()).build()).getId();
     }
 
     @AfterEach
@@ -97,7 +113,10 @@ class CommunicationLogControllerAccessIT {
         userRepository.findByEmail(ADMIN_EMAIL).ifPresent(userRepository::delete);
         userRepository.findByEmail(OWNER_EMAIL).ifPresent(userRepository::delete);
         userRepository.findByEmail(OTHER_EMAIL).ifPresent(userRepository::delete);
-        if (customerId != null) customerRepository.findById(customerId).ifPresent(customerRepository::delete);
+        if (customerId != null) {
+            logRepository.findByCustomerIdOrderByLoggedAtDesc(customerId).forEach(logRepository::delete);
+            customerRepository.findById(customerId).ifPresent(customerRepository::delete);
+        }
         if (leadId != null) leadRepository.findById(leadId).ifPresent(leadRepository::delete);
     }
 
@@ -187,6 +206,35 @@ class CommunicationLogControllerAccessIT {
     @Test
     void getByCustomer_noToken_returns401() throws Exception {
         mockMvc.perform(get("/api/customers/" + customerId + "/communications"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ── delete: owner-or-admin (independent of customer/lead assignment) ───
+
+    @Test
+    void delete_ownLog_agent_isAllowed() throws Exception {
+        mockMvc.perform(delete("/api/communications/" + ownerLogId)
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_anotherAgentsLog_agent_isForbidden() throws Exception {
+        mockMvc.perform(delete("/api/communications/" + otherLogId)
+                        .header("Authorization", "Bearer " + ownerToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_anyAgentsLog_admin_isAllowed() throws Exception {
+        mockMvc.perform(delete("/api/communications/" + otherLogId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_noToken_returns401NotForbidden() throws Exception {
+        mockMvc.perform(delete("/api/communications/" + ownerLogId))
                 .andExpect(status().isUnauthorized());
     }
 }
