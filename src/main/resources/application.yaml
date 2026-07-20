@@ -28,5 +28,6 @@ app:
 
 logging:
   level:
-    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    # Covers CredentialRedactingRequestLoggingFilter (com.example.insurancecrm.config) too —
+    # it must stay under this package so this one line keeps controlling its level.
     com.example.insurancecrm: DEBUG
