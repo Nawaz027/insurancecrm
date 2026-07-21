@@ -90,6 +90,21 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.noContent("User deactivated successfully"));
     }
 
+    @Operation(summary = "Permanently delete a user", description = "Hard-deletes a deactivated user, freeing up their email for reuse. " +
+            "The user must already be deactivated — active users cannot be permanently deleted. This cannot be undone and there is no reactivate endpoint.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User permanently deleted"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "User is still active — deactivate it first", content = @Content),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found", content = @Content),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Admin role required", content = @Content)
+    })
+    @DeleteMapping("/{id}/permanent")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @Parameter(description = "MongoDB ID of the deactivated user to permanently delete", required = true) @PathVariable String id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.noContent("User permanently deleted"));
+    }
+
     @Operation(summary = "Force logout agents", description = "Immediately ends the active sessions of the given agent accounts — " +
             "their access and refresh tokens stop working right away, even mid-session, and they'll be redirected to the login " +
             "page on their next request. Admin accounts in the list are ignored.")

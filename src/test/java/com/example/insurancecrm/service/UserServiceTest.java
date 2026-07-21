@@ -125,6 +125,32 @@ class UserServiceTest {
     }
 
     @Test
+    void deleteUser_inactiveUser_deletesIt() {
+        User existing = User.builder().id("user-1").active(false).build();
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(existing));
+
+        userService.deleteUser("user-1");
+
+        verify(userRepository).delete(existing);
+    }
+
+    @Test
+    void deleteUser_stillActiveUser_throwsAndDoesNotDelete() {
+        User existing = User.builder().id("user-1").active(true).build();
+        when(userRepository.findById("user-1")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> userService.deleteUser("user-1")).isInstanceOf(ApiException.class);
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_missingUser_throwsNotFound() {
+        when(userRepository.findById("missing")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.deleteUser("missing")).isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void findById_missingUser_throwsNotFound() {
         when(userRepository.findById("missing")).thenReturn(Optional.empty());
 

@@ -69,6 +69,17 @@ public class UserService {
         userRepository.save(user);
     }
 
+    /** Hard-deletes a user, freeing up their email for reuse. Only deactivated users can be permanently
+     *  deleted — this is a one-way door, there is no reactivate endpoint, so requiring deactivation first
+     *  gives admins a confirmation step before the account and its login are gone for good. */
+    public void deleteUser(String id) {
+        User user = findById(id);
+        if (user.isActive()) {
+            throw ApiException.badRequest("User must be deactivated before it can be permanently deleted");
+        }
+        userRepository.delete(user);
+    }
+
     /** Immediately invalidates every active/refresh token for the given agents, regardless of remaining expiry. */
     public void forceLogout(List<String> userIds) {
         List<User> agents = userRepository.findAllById(userIds).stream()
