@@ -82,9 +82,12 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<PagedResponse<CustomerResponse>>> getNew(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Search term matched against name and phone") @RequestParam(required = false) String q,
+            @Parameter(description = "Sort field: 'premium' or 'expiryDate'. Omit for oldest-assigned-first.") @RequestParam(required = false) String sortBy,
+            @Parameter(description = "'asc' or 'desc'") @RequestParam(required = false) String sortDir,
             Authentication auth) {
         return ResponseEntity.ok(ApiResponse.ok(
-                customerService.getNewCustomers(getUserId(auth), isAdmin(auth), page, size)));
+                customerService.getNewCustomers(getUserId(auth), isAdmin(auth), page, size, q, sortBy, sortDir)));
     }
 
     @Operation(summary = "Get customer by ID", description = "Returns the full profile including assigned agent details. " +
