@@ -9,5 +9,6 @@ public enum CommunicationOutcome {
     HANG_UP,
     NEXT_YEAR,
     SALE_CLOSE,
-    LANGUAGE_ISSUE
+    LANGUAGE_ISSUE,
+    NOT_INTERESTED
 }
