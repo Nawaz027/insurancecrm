@@ -43,7 +43,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String email = jwtUtil.extractEmail(token);
             User user = userRepository.findByEmail(email).orElse(null);
 
-            if (user != null && !isRevoked(token, user) && !isInactiveAgent(user)) {
+            if (user != null && user.isActive() && !isRevoked(token, user) && !isInactiveAgent(user)) {
                 if (user.getRole() == Role.AGENT) {
                     user.setLastActivityAt(LocalDateTime.now());
                     userRepository.save(user);
