@@ -112,6 +112,41 @@ class UserControllerAccessIT {
     }
 
     @Test
+    void delete_agent_isForbidden() throws Exception {
+        mockMvc.perform(delete("/api/users/" + agentId + "/permanent").header("Authorization", "Bearer " + agentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void delete_admin_activeUser_isBadRequest() throws Exception {
+        mockMvc.perform(delete("/api/users/" + agentId + "/permanent").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void delete_admin_deactivatedUser_isAllowed() throws Exception {
+        mockMvc.perform(delete("/api/users/" + agentId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/users/" + agentId + "/permanent").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void delete_admin_freesUpEmailForReuse() throws Exception {
+        mockMvc.perform(delete("/api/users/" + agentId).header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/users/" + agentId + "/permanent").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/users").header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "New Agent", "email", AGENT_EMAIL, "password", "pw123", "role", "AGENT"))))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     void getAll_noToken_returns401NotForbidden() throws Exception {
         mockMvc.perform(get("/api/users"))
                 .andExpect(status().isUnauthorized());
