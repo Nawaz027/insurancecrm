@@ -161,6 +161,14 @@ HTTPS) aren't covered here.
 
 ### Rolling back a deploy
 
+**Checking which version a running container is on**: images are also stamped with an
+`org.opencontainers.image.version` OCI label at build time, so a container running `:latest` (or
+any other tag) can be identified without cross-referencing GHCR:
+
+```bash
+docker inspect insurancecrm-backend-1 --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+```
+
 Every push builds and publishes a semver tag, `v<major>.<minor>.<patch>`. `major.minor` comes from
 that repo's own `VERSION` file (bump it manually, in a commit, when you want a major or minor
 release); `patch` auto-increments on every push by scanning existing git tags for the current

@@ -55,6 +55,8 @@ jobs:
           tags: |
             ghcr.io/intraevolve-lms/insuredindex:latest
             ghcr.io/intraevolve-lms/insuredindex:${{ steps.version.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
 
       - name: Tag this release in git
         run: |
